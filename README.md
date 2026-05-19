@@ -15,4 +15,4 @@ Open `index.html` in a browser to play.
 
 ## Notes
 
-The game includes enemies, pickups, a boss fight, generated sound effects, win/loss states, remote open-art loading, and procedural natural-scene fallback rendering. External asset sources and license notes are listed in `CREDITS.md`.
+The game includes enemies, pickups, a boss fight, generated sound effects, win/loss states, remote open-art loading, and procedural 8-bit jungle/base fallback rendering. External asset sources and license notes are listed in `CREDITS.md`.

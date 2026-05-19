@@ -1,6 +1,7 @@
 (function () {
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
   if (!ctx.roundRect) {
     ctx.roundRect = function (x, y, w, h, r) {
       const radius = Math.min(r, w / 2, h / 2);
@@ -82,6 +83,20 @@
     ctx.moveTo(points[0][0], points[0][1]);
     for (let i = 1; i < points.length; i += 1) ctx.lineTo(points[i][0], points[i][1]);
     ctx.stroke();
+  }
+
+  function drawSprite(image, sx, sy, sw, sh, dx, dy, dw, dh, flip) {
+    if (!image) return false;
+    ctx.save();
+    if (flip) {
+      ctx.translate(dx + dw, dy);
+      ctx.scale(-1, 1);
+      ctx.drawImage(image, sx, sy, sw, sh, 0, 0, dw, dh);
+    } else {
+      ctx.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
+    }
+    ctx.restore();
+    return true;
   }
 
   function center(entity) {
@@ -209,6 +224,7 @@
       this.particles = [];
       this.cameraX = 0;
       this.last = 0;
+      this.time = 0;
       this.shake = 0;
       this.bossMusicPlayed = false;
       this.messageTimer = 0;
@@ -229,6 +245,7 @@
       this.items = itemPlan.map((item) => ({ ...item, w: 26, h: 26, vy: 0, taken: false }));
       this.particles = [];
       this.cameraX = 0;
+      this.time = 0;
       this.shake = 0;
       this.state = "playing";
       this.bossMusicPlayed = false;
@@ -258,6 +275,7 @@
       if (this.state !== "playing") return;
 
       this.messageTimer = Math.max(0, this.messageTimer - dt);
+      this.time += dt;
       this.shake = Math.max(0, this.shake - dt);
       this.updatePlayer(dt);
       this.updateEnemies(dt);
@@ -649,9 +667,9 @@
 
     drawBackground() {
       const sky = ctx.createLinearGradient(0, 0, 0, H);
-      sky.addColorStop(0, "#8fc8e8");
-      sky.addColorStop(0.5, "#d6e9c8");
-      sky.addColorStop(1, "#6f8f5c");
+      sky.addColorStop(0, "#222a54");
+      sky.addColorStop(0.55, "#314061");
+      sky.addColorStop(1, "#17231f");
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, H);
 
@@ -676,96 +694,83 @@
         drawLayer(forest.forestFront?.image, 0.52, 68, 0.75);
 
       if (!drewRemoteForest) {
-        ctx.fillStyle = "rgba(255, 246, 198, 0.85)";
+        this.drawRetroJungle();
+      }
+
+      ctx.fillStyle = "rgba(9, 23, 19, 0.55)";
+      ctx.fillRect(0, 474, W, 66);
+    }
+
+    drawRetroJungle() {
+      drawPixelRect(0, 0, W, 5, "#111632");
+      for (let i = 0; i < 9; i += 1) {
+        const x = (i * 150 - this.cameraX * 0.08) % (W + 180) - 90;
+        drawPixelRect(x, 76 + (i % 3) * 16, 64, 8, "#62718c");
+        drawPixelRect(x + 22, 64 + (i % 2) * 13, 110, 8, "#53657f");
+      }
+
+      for (let i = 0; i < 8; i += 1) {
+        const x = i * 180 - (this.cameraX * 0.16) % 180 - 100;
+        ctx.fillStyle = i % 2 ? "#2e4d55" : "#28484e";
         ctx.beginPath();
-        ctx.arc(790 - this.cameraX * 0.05, 78, 42, 0, Math.PI * 2);
+        ctx.moveTo(x - 130, 356);
+        ctx.lineTo(x + 30, 142 + (i % 3) * 23);
+        ctx.lineTo(x + 210, 356);
+        ctx.closePath();
         ctx.fill();
+        drawPixelRect(x - 30, 295, 92, 8, "rgba(18, 32, 38, 0.45)");
+      }
 
-        for (let i = 0; i < 7; i += 1) {
-          const x = i * 210 - (this.cameraX * 0.12) % 210 - 90;
-          ctx.fillStyle = i % 2 ? "#6f8d83" : "#78978a";
-          ctx.beginPath();
-          ctx.moveTo(x - 180, 330);
-          ctx.bezierCurveTo(x - 90, 150, x + 80, 125, x + 210, 330);
-          ctx.closePath();
-          ctx.fill();
-        }
-
-        for (let i = 0; i < 16; i += 1) {
-          const x = (i * 180 - this.cameraX * 0.3) % (W + 220) - 110;
-          const trunk = "#5b432d";
-          strokeLine(
-            [
-              [x, 480],
-              [x + 8 * Math.sin(i), 374],
-              [x + 18 * Math.cos(i), 270],
-            ],
-            trunk,
-            13 + (i % 3) * 2,
-          );
-          for (let j = 0; j < 5; j += 1) {
-            drawEllipse(x + Math.cos(j * 1.4 + i) * 42, 250 + Math.sin(j * 1.8) * 24, 58, 38, j % 2 ? "#2f6c42" : "#3f8250");
-          }
-        }
-
-        for (let i = 0; i < 24; i += 1) {
-          const x = (i * 106 - this.cameraX * 0.62) % (W + 140) - 70;
-          drawEllipse(x, 423 + (i % 3) * 9, 70, 34, i % 2 ? "#285d38" : "#367344");
+      for (let i = 0; i < 15; i += 1) {
+        const x = (i * 168 - this.cameraX * 0.34) % (W + 220) - 100;
+        const y = 318 + (i % 4) * 15;
+        drawPixelRect(x + 11, y + 26, 18, 150, "#3f2a1b");
+        drawPixelRect(x + 16, y + 30, 5, 145, "#6a472c");
+        for (let j = 0; j < 5; j += 1) {
+          const ly = y - j * 28;
+          drawPixelRect(x - 55 + j * 8, ly + 22, 118 - j * 10, 15, "#1f5d38");
+          drawPixelRect(x - 38 + j * 7, ly + 8, 88 - j * 9, 17, "#2f7b43");
+          drawPixelRect(x - 20 + j * 5, ly, 56 - j * 5, 14, "#4c9b53");
         }
       }
 
-      ctx.fillStyle = "rgba(24, 55, 32, 0.48)";
-      ctx.fillRect(0, 474, W, 66);
+      for (let i = 0; i < 12; i += 1) {
+        const x = (i * 224 - this.cameraX * 0.48) % (W + 230) - 120;
+        drawPixelRect(x, 356, 78, 42, "#1a2b2e");
+        drawPixelRect(x + 9, 344, 60, 12, "#687276");
+        drawPixelRect(x + 16, 369, 11, 20, "#0e1719");
+        drawPixelRect(x + 43, 368, 16, 7, "#d8c77d");
+      }
+
+      for (let i = 0; i < 28; i += 1) {
+        const x = (i * 70 - this.cameraX * 0.64) % (W + 100) - 50;
+        drawPixelRect(x, 438 + (i % 3) * 5, 46, 9, "#1d6332");
+        drawPixelRect(x + 10, 426 + (i % 2) * 8, 28, 12, "#348343");
+        drawPixelRect(x + 18, 416 + (i % 4) * 3, 13, 17, "#57a24e");
+      }
     }
 
     drawPlatforms() {
       for (const p of platforms) {
-        const soil = ctx.createLinearGradient(0, p.y, 0, p.y + p.h);
-        soil.addColorStop(0, "#836c45");
-        soil.addColorStop(0.34, "#5b412d");
-        soil.addColorStop(1, "#2d241b");
-        ctx.fillStyle = soil;
-        ctx.beginPath();
-        ctx.roundRect(p.x, p.y + 7, p.w, p.h, 12);
-        ctx.fill();
-        ctx.fillStyle = "#4f8b43";
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y + 10);
-        for (let x = p.x; x <= p.x + p.w; x += 34) {
-          ctx.quadraticCurveTo(x + 15, p.y - 4 - ((x / 34) % 3) * 2, x + 34, p.y + 8);
-        }
-        ctx.lineTo(p.x + p.w, p.y + 22);
-        ctx.lineTo(p.x, p.y + 22);
-        ctx.closePath();
-        ctx.fill();
-        for (let x = p.x + 20; x < p.x + p.w; x += 58) {
-          drawEllipse(x, p.y + 35 + ((x / 58) % 3) * 8, 15, 6, "#3b2f23");
-          strokeLine(
-            [
-              [x + 12, p.y + 12],
-              [x + 18, p.y + 25],
-              [x + 15, p.y + 42],
-            ],
-            "rgba(38, 28, 19, 0.38)",
-            2,
-          );
+        drawPixelRect(p.x, p.y, p.w, 10, "#68a94d");
+        drawPixelRect(p.x, p.y + 10, p.w, 8, "#2f7d3d");
+        drawPixelRect(p.x, p.y + 18, p.w, p.h - 18, "#6b4a2d");
+        drawPixelRect(p.x, p.y + 30, p.w, p.h - 30, "#3a2b1c");
+        for (let x = p.x; x < p.x + p.w; x += 32) {
+          const n = Math.floor(x / 32) % 4;
+          drawPixelRect(x + 2, p.y + 4 + n, 17, 6, "#9bd15d");
+          drawPixelRect(x + 6, p.y + 22, 18, 8, "#8c6a40");
+          drawPixelRect(x + 20, p.y + 42, 9, 5, "#211a13");
+          if (n === 0) drawPixelRect(x + 12, p.y + 13, 5, 13, "#23582d");
         }
       }
 
       for (let x = 0; x < worldWidth; x += 420) {
-        drawEllipse(x + 120, 464, 25, 13, "#5d654f");
-        drawEllipse(x + 138, 458, 16, 10, "#788061");
-        strokeLine(
-          [
-            [x + 160, 478],
-            [x + 166, 442],
-            [x + 156, 410],
-          ],
-          "#4d3a24",
-          5,
-        );
-        drawEllipse(x + 150, 414, 24, 16, "#477c44");
-        drawEllipse(x + 172, 422, 28, 18, "#3f7140");
+        drawPixelRect(x + 105, 456, 58, 16, "#5a6051");
+        drawPixelRect(x + 116, 444, 38, 12, "#889078");
+        drawPixelRect(x + 176, 426, 11, 54, "#4c321f");
+        drawPixelRect(x + 147, 416, 68, 16, "#2d783a");
+        drawPixelRect(x + 157, 401, 49, 17, "#49a34d");
       }
     }
 
@@ -776,73 +781,48 @@
       const x = p.x;
       const y = p.y;
       const facing = p.dir;
+      const sheet = this.assets?.images?.spaceSoldier?.image;
+      if (sheet) {
+        const moving = Math.abs(p.vx) > 28 && p.grounded;
+        const jump = !p.grounded;
+        let frame = moving ? Math.floor(this.time * 12) % 4 : 0;
+        let row = 0;
+        if (jump) {
+          frame = 1;
+          row = 2;
+        }
+        if (p.h < 40) {
+          frame = 3;
+          row = 3;
+        }
+        if (drawSprite(sheet, frame * 32, row * 32, 32, 32, x - 16, y - 13, 64, 64, facing < 0)) {
+          if (p.power !== "normal") drawPixelRect(x + 4, y - 8, 24, 5, p.power === "rapid" ? "#4ee0ff" : "#ffcc4d");
+          return;
+        }
+      }
       const crouch = p.h < 40;
-      const bodyY = crouch ? 10 : 14;
       ctx.save();
       ctx.translate(x + 16, y);
       ctx.scale(facing, 1);
-      drawEllipse(0, 8, 9, 10, "#cfa47a");
-      drawEllipse(3, 6, 4, 3, "#1d1712");
-      strokeLine(
-        [
-          [-10, 2],
-          [-2, -2],
-          [8, 2],
-        ],
-        "#263625",
-        5,
-      );
-      drawRoundRect(-10, bodyY, 21, crouch ? 17 : 24, 9, "#3f6d45");
-      drawRoundRect(-7, bodyY + 4, 15, 8, 5, "#7f9a5d");
-      strokeLine(
-        [
-          [8, bodyY + 7],
-          [23, bodyY + 9],
-          [33, bodyY + 8],
-        ],
-        "#2c2620",
-        6,
-      );
-      strokeLine(
-        [
-          [28, bodyY + 7],
-          [42, bodyY + 7],
-        ],
-        "#5b6060",
-        4,
-      );
-      strokeLine(
-        [
-          [-6, bodyY + (crouch ? 17 : 23)],
-          [-12, p.h - 3],
-        ],
-        "#263a2e",
-        7,
-      );
-      strokeLine(
-        [
-          [7, bodyY + (crouch ? 17 : 23)],
-          [14, p.h - 3],
-        ],
-        "#263a2e",
-        7,
-      );
-      strokeLine(
-        [
-          [-16, p.h - 2],
-          [-4, p.h - 2],
-        ],
-        "#151719",
-        5,
-      );
-      strokeLine(
-        [
-          [10, p.h - 2],
-          [23, p.h - 2],
-        ],
-        "#151719",
-        5,
-      );
+      const bob = p.grounded ? Math.floor(this.time * 12) % 2 : 1;
+      drawPixelRect(-10, 0, 20, 6, "#2f6b3b");
+      drawPixelRect(-7, 4, 18, 11, "#d89a62");
+      drawPixelRect(4, 8, 4, 4, "#101010");
+      drawPixelRect(-12, 15, 24, crouch ? 14 : 22, "#2c72b8");
+      drawPixelRect(-7, 18, 14, 7, "#96d6ff");
+      drawPixelRect(-12, 27, 24, 5, "#1b3057");
+      drawPixelRect(8, 19, 24, 6, "#252a32");
+      drawPixelRect(29, 17, 16, 4, "#d8dee4");
+      drawPixelRect(41, 19, 8, 3, "#ffcc4d");
+      if (crouch) {
+        drawPixelRect(-16, 31, 17, 6, "#24344a");
+        drawPixelRect(1, 31, 18, 6, "#24344a");
+      } else {
+        drawPixelRect(-10, 32, 8, 14 + bob, "#24344a");
+        drawPixelRect(4, 32, 8, 14 - bob, "#24344a");
+        drawPixelRect(-15, 44 + bob, 15, 5, "#111820");
+        drawPixelRect(2, 44 - bob, 16, 5, "#111820");
+      }
       ctx.restore();
       if (p.power !== "normal") {
         drawRoundRect(x + 4, y - 8, 24, 5, 4, p.power === "rapid" ? "#4ee0ff" : "#ffcc4d");
@@ -859,151 +839,80 @@
 
     drawSoldier(e) {
       const hurt = e.hurt > 0;
-      const x = e.x + 17;
+      const x = e.x;
       const y = e.y;
-      drawEllipse(x, y + 8, 9, 10, hurt ? "#fff0df" : "#d6ad83");
-      strokeLine(
-        [
-          [x - 10, y + 2],
-          [x + 2, y - 2],
-          [x + 12, y + 3],
-        ],
-        "#4d3925",
-        5,
-      );
-      drawRoundRect(x - 11, y + 15, 22, 22, 10, hurt ? "#f08c72" : "#8a5d36");
-      strokeLine(
-        [
-          [x + 8, y + 22],
-          [x + 24, y + 24],
-        ],
-        "#35291e",
-        5,
-      );
-      strokeLine(
-        [
-          [x - 6, y + 35],
-          [x - 13, y + 48],
-        ],
-        "#433523",
-        6,
-      );
-      strokeLine(
-        [
-          [x + 7, y + 35],
-          [x + 14, y + 48],
-        ],
-        "#433523",
-        6,
-      );
+      const dir = e.vx < 0 ? -1 : 1;
+      ctx.save();
+      ctx.translate(x + 17, y);
+      ctx.scale(dir, 1);
+      drawPixelRect(-9, 0, 18, 6, "#46542f");
+      drawPixelRect(-8, 5, 17, 10, hurt ? "#ffe4d2" : "#cc8e5c");
+      drawPixelRect(3, 8, 4, 3, "#101010");
+      drawPixelRect(-13, 15, 26, 20, hurt ? "#ff5b61" : "#7b4a28");
+      drawPixelRect(-9, 20, 17, 6, "#c99045");
+      drawPixelRect(9, 21, 24, 5, "#29251f");
+      drawPixelRect(29, 19, 9, 3, "#b7b2a1");
+      drawPixelRect(-10, 35, 8, 13, "#33271d");
+      drawPixelRect(4, 35, 8, 13, "#33271d");
+      drawPixelRect(-14, 45, 13, 4, "#111111");
+      drawPixelRect(2, 45, 14, 4, "#111111");
+      ctx.restore();
       this.drawHealthPips(e);
     }
 
     drawTurret(e) {
       const hurt = e.hurt > 0;
-      drawEllipse(e.x + 20, e.y + 30, 20, 15, hurt ? "#f4efe1" : "#626b62");
-      drawEllipse(e.x + 20, e.y + 17, 14, 11, "#8b907a");
+      drawPixelRect(e.x + 2, e.y + 28, 36, 17, hurt ? "#f2eee2" : "#6d775b");
+      drawPixelRect(e.x + 8, e.y + 16, 24, 14, "#99a06f");
+      drawPixelRect(e.x + 12, e.y + 10, 16, 7, "#404b38");
       const dir = this.player.x < e.x ? -1 : 1;
-      strokeLine(
-        [
-          [e.x + 20 + dir * 9, e.y + 17],
-          [e.x + 20 + dir * 36, e.y + 14],
-        ],
-        "#2f3634",
-        8,
-      );
-      strokeLine(
-        [
-          [e.x + 8, e.y + 44],
-          [e.x + 32, e.y + 44],
-        ],
-        "#2d312c",
-        8,
-      );
+      drawPixelRect(e.x + (dir > 0 ? 28 : -16), e.y + 17, 29, 7, "#2f3634");
+      drawPixelRect(e.x + (dir > 0 ? 51 : -22), e.y + 19, 7, 3, "#e4d77d");
+      drawPixelRect(e.x, e.y + 43, 40, 5, "#20251f");
       this.drawHealthPips(e);
     }
 
     drawRocket(e) {
       const hurt = e.hurt > 0;
-      const x = e.x + 18;
+      const x = e.x;
       const y = e.y;
-      drawEllipse(x, y + 9, 9, 10, "#d9b58e");
-      drawRoundRect(x - 13, y + 16, 26, 22, 10, hurt ? "#fff2bd" : "#536b35");
-      drawRoundRect(x + 9, y + 6, 12, 28, 7, "#697065");
-      strokeLine(
-        [
-          [x + 15, y + 10],
-          [x + 31, y + 6],
-        ],
-        "#33372f",
-        5,
-      );
-      strokeLine(
-        [
-          [x - 6, y + 36],
-          [x - 11, y + 48],
-        ],
-        "#2f3b29",
-        6,
-      );
-      strokeLine(
-        [
-          [x + 7, y + 36],
-          [x + 14, y + 48],
-        ],
-        "#2f3b29",
-        6,
-      );
+      const dir = e.vx < 0 ? -1 : 1;
+      ctx.save();
+      ctx.translate(x + 19, y);
+      ctx.scale(dir, 1);
+      drawPixelRect(-8, 1, 17, 13, "#d7a069");
+      drawPixelRect(-11, 14, 25, 24, hurt ? "#ffe47a" : "#3f7d43");
+      drawPixelRect(8, 5, 13, 29, "#697065");
+      drawPixelRect(15, 2, 8, 7, "#c7c9b8");
+      drawPixelRect(15, 10, 19, 5, "#343a35");
+      drawPixelRect(-8, 37, 7, 12, "#243226");
+      drawPixelRect(5, 37, 8, 12, "#243226");
+      ctx.restore();
       this.drawHealthPips(e);
     }
 
     drawBoss() {
       const b = this.boss;
       const hurt = b.hurt > 0;
-      ctx.save();
-      const body = ctx.createLinearGradient(b.x, b.y, b.x + b.w, b.y + b.h);
-      body.addColorStop(0, hurt ? "#f6ead8" : "#4e5c48");
-      body.addColorStop(0.55, hurt ? "#fff7e5" : "#71815e");
-      body.addColorStop(1, hurt ? "#d8c0a6" : "#2f3d32");
-      ctx.fillStyle = body;
-      ctx.beginPath();
-      ctx.ellipse(b.x + 65, b.y + 58, 58, 42, -0.08, 0, Math.PI * 2);
-      ctx.fill();
-      drawEllipse(b.x + 42, b.y + 25, 25, 21, "#3a4438");
-      drawEllipse(b.x + 74, b.y + 25, 25, 21, "#3a4438");
-      drawEllipse(b.x + 43, b.y + 25, 7, 6, "#ff5b61");
-      drawEllipse(b.x + 75, b.y + 25, 7, 6, "#ff5b61");
-      strokeLine(
-        [
-          [b.x + 26, b.y + 53],
-          [b.x - 10, b.y + 72],
-          [b.x + 18, b.y + 93],
-        ],
-        "#2b3328",
-        12,
-      );
-      strokeLine(
-        [
-          [b.x + 95, b.y + 54],
-          [b.x + 142, b.y + 54],
-        ],
-        "#30372f",
-        15,
-      );
-      drawEllipse(b.x + 148, b.y + 54, 11, 8, b.phase === 3 ? "#ffcc4d" : "#4ee0ff");
+      const base = hurt ? "#ddd7c7" : "#3f4b40";
+      drawPixelRect(b.x + 6, b.y + 34, 112, 52, base);
+      drawPixelRect(b.x + 18, b.y + 20, 82, 24, "#26382f");
+      drawPixelRect(b.x + 27, b.y + 12, 58, 13, "#71815e");
+      drawPixelRect(b.x + 36, b.y + 24, 12, 10, "#ff2f3f");
+      drawPixelRect(b.x + 68, b.y + 24, 12, 10, "#ff2f3f");
+      drawPixelRect(b.x + 16, b.y + 48, 34, 17, "#75856b");
+      drawPixelRect(b.x + 58, b.y + 48, 24, 17, "#1e2b29");
+      drawPixelRect(b.x + 93, b.y + 44, 56, 16, "#202829");
+      drawPixelRect(b.x + 144, b.y + 48, 16, 8, b.phase === 3 ? "#ffcc4d" : "#4ee0ff");
+      drawPixelRect(b.x - 8, b.y + 58, 26, 12, "#26382f");
+      drawPixelRect(b.x - 15, b.y + 68, 18, 29, "#1d2824");
       for (let i = 0; i < 4; i += 1) {
-        const lx = b.x + 26 + i * 24;
-        strokeLine(
-          [
-            [lx, b.y + 88],
-            [lx - 8, b.y + 111],
-            [lx + 8, b.y + 111],
-          ],
-          "#242b25",
-          9,
-        );
+        drawPixelRect(b.x + 16 + i * 26, b.y + 82, 16, 18, "#1c2622");
+        drawPixelRect(b.x + 11 + i * 26, b.y + 100, 26, 9, "#111817");
       }
-      ctx.restore();
+      for (let i = 0; i < 6; i += 1) {
+        drawPixelRect(b.x + 12 + i * 17, b.y + 38, 8, 5, "#a2b079");
+      }
     }
 
     drawHealthPips(e) {

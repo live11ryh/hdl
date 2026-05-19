@@ -1,5 +1,20 @@
 (function () {
   const sources = {
+    contraStyle: {
+      local: "assets/images/contra_clone_character_sprite_sheet.png",
+      remote: "https://opengameart.org/sites/default/files/contra_clone_character_sprite_sheet.png",
+      credit: '"Contra Style Character" by Diogenes99, CC0',
+    },
+    spaceSoldier: {
+      local: "assets/images/all_sprites.png",
+      remote: "https://opengameart.org/sites/default/files/all_sprites.png",
+      credit: '"Space soldier (sprite sheet 32x32)" by drakzlin, CC0',
+    },
+    grassTiles: {
+      local: "assets/images/grass_dead_grass_spritesheet.png",
+      remote: "https://lpc.opengameart.org/sites/default/files/Spritesheet.png",
+      credit: '"Grass/Dead Grass Platformer Tileset" by PROWNE, CC0',
+    },
     player: {
       local: "assets/images/fierce_soldier_main.png",
       remote: "https://opengameart.org/sites/default/files/fierce_soldier_sprites_-_main_character.png",
